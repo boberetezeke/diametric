@@ -38,6 +38,7 @@ import clojure.lang.PersistentHashSet;
 import clojure.lang.PersistentVector;
 import clojure.lang.Var;
 import datomic.Util;
+import datomic.Database;
 
 @JRubyModule(name="Diametric::Persistence::Utils")
 public class DiametricUtils {
@@ -241,6 +242,7 @@ public class DiametricUtils {
         Var var = DiametricService.getFn("clojure.core", "vector");
         PersistentVector clj_tx_data = (PersistentVector)var.invoke();
         Var adder = DiametricService.getFn("clojure.core", "conj");
+        Database arg_database;
         for (int i=0; i<ruby_array.getLength(); i++) {
             Object element = ruby_array.get(i);
             if (element instanceof RubyHash) {
@@ -254,6 +256,8 @@ public class DiametricUtils {
                         (PersistentVector)adder.invoke(clj_tx_data, DiametricUtils.convertRubyToJava(context, (IRubyObject)element));
             } else if (element instanceof String) {
                 clj_tx_data = (PersistentVector)adder.invoke(clj_tx_data, getStringOrUUID((String)element));
+            } else if ((arg_database = DiametricPeer.getDatabase(element)) != null) {
+                clj_tx_data = (PersistentVector)adder.invoke(clj_tx_data, arg_database);
             } else {
                 clj_tx_data = (PersistentVector)adder.invoke(clj_tx_data, element);
             }
