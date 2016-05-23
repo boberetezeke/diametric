@@ -70,7 +70,7 @@ public class DiametricPeer extends RubyModule {
         } catch (Exception e) {
             // Diametric doesn't require creating database before connect.
             // if database has not yet created, try that first and return the connection
-            if (e instanceof clojure.lang.ExceptionInfo) {
+            if (e instanceof java.lang.RuntimeException) {
                 try {
                     DiametricService.getFn("datomic.api", "create-database").invoke(uriOrMap);
                     Connection connection = (Connection) DiametricService.getFn("datomic.api", "connect").invoke(uriOrMap);
