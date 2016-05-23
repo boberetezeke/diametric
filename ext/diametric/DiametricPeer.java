@@ -296,7 +296,14 @@ public class DiametricPeer extends RubyModule {
             default:
                 Object[] inputs = new Object[args.length-2];
                 for (int i=0; i<inputs.length; i++) {
-                    inputs[i] = DiametricUtils.convertRubyToJava(context, args[i+2]);
+                    Database arg_database;
+
+                    if ((arg_database = getDatabase(args[i+2])) != null) {
+                      inputs[i] = arg_database;
+                    }
+                    else {
+                      inputs[i] = DiametricUtils.convertRubyToJava(context, args[i+2]);
+                    }
                 }
                 results = query_with_args(query, database, inputs);
             }
@@ -311,7 +318,7 @@ public class DiametricPeer extends RubyModule {
         return diametric_set;
     }
 
-    private static Database getDatabase(Object value) {
+    public static Database getDatabase(Object value) {
         if (value instanceof DiametricDatabase) {
             return (Database) ((DiametricDatabase)value).toJava();
         } else if (value instanceof MapJavaProxy) {
