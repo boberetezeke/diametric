@@ -12,7 +12,6 @@ module Diametric
         parse_tx_data(tx_data, parsed_data)
 
         # TODO: exception handling. error message should be found by errors.messages
-        map = connection.transact(parsed_data).get
 
 =begin
     resolve_fn = Java::ClojureLang::RT.var("datomic.api", "resolve-tempid")
@@ -21,7 +20,9 @@ module Diametric
     db  = connection.db.to_java
     resolve_fn.invoke(db, ids, self.dbid.to_java)
 =end
-        resolve_changes([self], map)
+        map = connection.transaction(parsed_data) do |m|
+          resolve_changes([self], m)
+        end
 
         map
       end

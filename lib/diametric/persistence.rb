@@ -1,6 +1,13 @@
 module Diametric
   # Persistence is the main entry point for adding persistence to your diametric entities.
   module Persistence
+    class Connection
+      attr_accessor :transaction_manager
+      def transaction(parsed_data=nil, &block)
+        self.transaction_manager.transaction(parsed_data, &block)
+      end
+    end
+
     class << self; attr_reader :conn_type; end
     autoload :REST, 'diametric/persistence/rest'
 
@@ -16,7 +23,10 @@ module Diametric
     #                                                     :storage  => "my-dbalias"})
     def self.establish_base_connection(options)
       @_persistence_class = persistence_class(options[:uri])
-      @_persistence_class.connect(options)
+      connection = @_persistence_class.connect(options)
+      connection.transaction_manager = Peer::TransactionManager.new(connection) if peer?
+
+      connection
     end
 
     # Including +Diametric::Persistence+ after establishing a base connection will include
