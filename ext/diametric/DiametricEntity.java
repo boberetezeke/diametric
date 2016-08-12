@@ -79,6 +79,11 @@ public class DiametricEntity extends RubyObject {
         return context.getRuntime().getNil();
     }
 
+    @JRubyMethod
+    public IRubyObject dbid(ThreadContext context) {
+        return eid(context);
+    }
+
     @JRubyMethod(name={"==","eql?"}, required=1)
     public IRubyObject eql_p(ThreadContext context, IRubyObject arg) {
         Object other = DiametricUtils.convertRubyToJava(context, arg);
@@ -153,6 +158,18 @@ public class DiametricEntity extends RubyObject {
             Var var = DiametricService.getFn("clojure.core", "count");
             Integer count = (Integer) var.invoke(entity);
             return context.getRuntime().newFixnum(count);
+        } catch (Throwable t) {
+            throw context.getRuntime().newRuntimeError(t.getMessage());
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject clone(ThreadContext context) {
+        try {
+            RubyClass clazz = (RubyClass)context.getRuntime().getClassFromPath("Diametric::Persistence::Entity");
+            DiametricEntity new_entity = (DiametricEntity)clazz.allocate();
+            new_entity.entity = this.entity;
+            return new_entity;
         } catch (Throwable t) {
             throw context.getRuntime().newRuntimeError(t.getMessage());
         }

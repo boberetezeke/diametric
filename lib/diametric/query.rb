@@ -200,7 +200,8 @@ EOQ
         keys.uniq!
 
         clauses = keys.map { |attribute|
-          [~"?e", model.namespace(model.prefix, attribute), ~"?#{attribute}"]
+          attribute_prefix = model.attributes[attribute][:prefix]
+          [~"?e", model.namespace(attribute_prefix || model.prefix, attribute), ~"?#{attribute}"]
         }
         clauses += filters
 

@@ -143,6 +143,8 @@ module Diametric
       # * +:doc+: A string used in Datomic to document the attribute.
       # * +:fulltext+: The only valid value is +true+. Indicates that a
       #   fulltext search index should be generated for the attribute.
+      # * +:prefix+: The prefix to use in the full datomic attribute name.
+      #   This overrides the use of the class prefix.
       # * +:default+: The value the attribute will default to when the
       #   Entity is initialized. Defaults for attributes with +:cardinality+ of +:many+
       #   will be transformed into a Set by passing the default to +Set.new+.
@@ -218,6 +220,7 @@ module Diametric
         schema_array = @attributes.reduce([]) do |schema, (attribute, opts)|
           opts = opts.dup
           value_type = opts.delete(:value_type)
+          attribute_prefix = opts.delete(:prefix)
 
           unless opts.empty?
             opts[:cardinality] = namespace("db.cardinality", opts[:cardinality])
@@ -230,7 +233,7 @@ module Diametric
           end
 
           schema << defaults.merge({
-                                     :"db/ident" => namespace(prefix, attribute),
+                                     :"db/ident" => namespace(attribute_prefix || prefix, attribute),
                                      :"db/valueType" => value_type(value_type),
                                      :"db/id" => tempid(:"db.part/db")
                                    }).merge(opts)
@@ -356,12 +359,16 @@ module Diametric
           Logger.debug "Entity#peer_reify (else)"
           return thing
         end
-        first_key = entity.keys.first
-        class_name = to_classname(first_key)
-        instance = eval("#{class_name}.new")
+
+        instance = self.new
         entity.keys.each do |key|
-          matched_data = /:([a-zA-Z0-9_\.]+)\/([a-zA-Z0-9_]+)/.match(key)
-          instance.send("clean_#{matched_data[2]}=", entity[key])
+          key_prefix, key_name = /:([a-zA-Z0-9_\.]+)\/([a-zA-Z0-9_]+)/.match(key).captures
+
+          attribute_prefix = attributes[key_name.to_sym][:prefix]
+
+          if ((attribute_prefix && attribute_prefix.to_s == key_prefix) || key_prefix == prefix)
+            instance.send("clean_#{key_name}=", entity[key])
+          end
         end
         instance.send("dbid=", Diametric::Persistence::Object.new(entity.get("db/id")))
 
@@ -585,12 +592,28 @@ module Diametric
       entity_tx = {}
       txes = []
       attribute_names.each do |attribute_name|
-        cardinality = self.class.attributes[attribute_name.to_sym][:cardinality]
+        attribute_info = self.class.attributes[attribute_name.to_sym]
+        cardinality = attribute_info[:cardinality]
+        attribute_prefix = attribute_info[:prefix]
 
         if cardinality == :many
           txes += cardinality_many_tx_data(attribute_name)
         else
-          entity_tx[self.class.namespace(self.class.prefix, attribute_name)] = self.send(attribute_name)
+          new_value = self.send(attribute_name)
+          namespaced_attribute = self.class.namespace(attribute_prefix || self.class.prefix, attribute_name)
+          # nil's aren't allowed as values in datomic
+          if new_value.nil? && @dbid
+            # setting to nil means retract
+            previous_value = self.changed_attributes[attribute_name]
+            if previous_value.respond_to?(:eid)
+              previous_value = previous_value.eid
+            elsif previous_value.is_a?(Diametric::Persistence::Object)
+              previous_value = previous_value.to_s.to_i
+            end
+            txes << [:"db/retract", @dbid, namespaced_attribute, previous_value]
+          else
+            entity_tx[namespaced_attribute] = new_value
+          end
         end
       end
 
