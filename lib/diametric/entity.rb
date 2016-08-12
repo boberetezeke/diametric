@@ -246,6 +246,7 @@ module Diametric
             schema_array << es
           end
         end
+        Logger.debug "schema_array: #{schema_array}"
         schema_array
       end
 
@@ -325,6 +326,7 @@ module Diametric
       end
 
       def peer_reify(thing, conn_or_db=nil, resolve=false)
+        Logger.debug "Entity#peer_reify (begin)"
         conn_or_db ||= Diametric::Persistence::Peer.connect.db
 
         if conn_or_db.respond_to?(:db)
@@ -332,9 +334,11 @@ module Diametric
         end
 
         if thing.is_a? Fixnum
+          Logger.debug "Entity#peer_reify (Fixnum)"
           dbid = thing
           entity = conn_or_db.entity(dbid)
         elsif thing.respond_to?(:eid)
+          Logger.debug "Entity#peer_reify (eid)"
           dbid = thing.eid
           if entity.respond_to?(:keys)
             entity = thing
@@ -342,11 +346,14 @@ module Diametric
             entity = conn_or_db.entity(dbid)
           end
         elsif thing.kind_of? java.lang.Long
+          Logger.debug "Entity#peer_reify (long)"
           entity = conn_or_db.entity(Diametric::Persistence::Object.new(thing))
         elsif thing.respond_to?(:to_java)
+          Logger.debug "Entity#peer_reify (to_java)"
           dbid = thing.to_java
           entity = conn_or_db.entity(dbid)
         else
+          Logger.debug "Entity#peer_reify (else)"
           return thing
         end
         first_key = entity.keys.first
@@ -591,6 +598,7 @@ module Diametric
         @dbid ||= tempid
         txes << entity_tx.merge({:"db/id" => dbid})
       end
+      Logger.debug "tx_data: txes = #{txes.inspect}"
       txes
     end
 
