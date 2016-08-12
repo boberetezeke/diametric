@@ -26,7 +26,20 @@ public class DiametricObject extends RubyObject {
     public Object clone() throws CloneNotSupportedException {
         return super.clone();
     }
-    
+
+    @JRubyMethod(name="clone")
+    public IRubyObject ruby_clone(ThreadContext context) {
+        // System.out.println("in DiametricObject#ruby_clone");
+        try {
+            RubyClass clazz = (RubyClass)context.getRuntime().getClassFromPath("Diametric::Persistence::Object");
+            DiametricObject new_object = (DiametricObject)clazz.allocate();
+            new_object.update(this);
+            return new_object;
+        } catch (Throwable t) {
+            throw context.getRuntime().newRuntimeError(t.getMessage());
+        }
+    }
+
     Object toJava() {
         return java_object;
     }
