@@ -11,6 +11,8 @@ module Diametric
         parsed_data = []
         parse_tx_data(tx_data, parsed_data)
 
+        Logger.info "in save: parsed_data = #{parsed_data.inspect}"
+
         # TODO: exception handling. error message should be found by errors.messages
 
 =begin
