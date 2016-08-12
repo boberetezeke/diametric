@@ -166,6 +166,10 @@ module Diametric
         setup_attribute_methods(name, opts[:cardinality])
       end
 
+      def mixin(mod)
+        mod.send(:mixin, self)
+      end
+
       # @return [Array<Symbol>] Names of the entity's attributes.
       def attribute_names
         @attributes.keys
