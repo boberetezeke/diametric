@@ -20,6 +20,16 @@ module Diametric
       @logger = logger
     end
 
+    def self.set_debug_level(level)
+      @logger ||= Logger.new
+      @logger.level = level
+    end
+
+    def self.get_debug_level
+      @logger ||= Logger.new
+      @logger.level
+    end
+
     attr_accessor :level
     def initialize(level=:warning)
       @level = level
