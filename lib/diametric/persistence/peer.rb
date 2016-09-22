@@ -11,7 +11,17 @@ module Diametric
         parsed_data = []
         parse_tx_data(tx_data, parsed_data)
 
-        Logger.info "in save: parsed_data = #{parsed_data.inspect}"
+        debug_parsed_data = parsed_data.map do |entity|
+          Hash[entity.to_a.map do |k, v|
+            if v.is_a?(Diametric::Persistence::Object)
+              v = v.to_i
+            else
+              v
+            end
+            [k, v]
+          end]
+        end
+        Logger.info "in save: debug_parsed_data() = #{debug_parsed_data.inspect}"
 
         # TODO: exception handling. error message should be found by errors.messages
 
@@ -170,6 +180,7 @@ module Diametric
 
         def create_schema(connection=nil)
           connection ||= Diametric::Persistence::Peer.connect
+          Logger.info "create schema: #{schema}"
           connection.transact(schema)
         end
 
